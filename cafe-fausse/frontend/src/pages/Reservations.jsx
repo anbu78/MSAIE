@@ -213,6 +213,7 @@ function Reservations() {
             <ul>
               <li>We hold 30 tables per seating; availability is checked in real time.</li>
               <li>Each reservation books one table for 1–6 guests. Additional tables require separate reservations and are subject to availability.</li>
+              <li>For parties of 20 or more, call us to book at <a href="tel:+12025554567">(202) 555-4567</a>.</li>
               <li>Please arrive within 15 minutes of your reserved time.</li>
               <li>Need to cancel or modify? Call us or email reservations@cafefausse.com.</li>
             </ul>
