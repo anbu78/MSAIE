@@ -30,14 +30,29 @@ BUSINESS_HOURS = {
 
 
 def parse_time_slot(raw_value):
-    """Parse an ISO-ish datetime string (e.g. from <input type=datetime-local>)."""
+    """Parse an ISO-ish datetime string (e.g. from <input type=datetime-local>).
+
+    Returns (datetime_or_None, error_message_or_None). The browser's
+    datetime-local input always submits a naive local timestamp
+    ("YYYY-MM-DDTHH:MM"), but a direct API caller could send a
+    timezone-aware ISO string (e.g. with a "+00:00" or "Z" suffix). Comparing
+    a naive and an aware datetime raises a TypeError, which previously
+    surfaced as an unhandled 500 error. We don't currently track a
+    restaurant timezone, so we reject timezone-aware input explicitly with a
+    clear validation message instead (FR-7, NFR-6).
+    """
     if not raw_value:
-        return None
+        return None, "A valid date and time is required."
     try:
-        # datetime-local inputs produce "YYYY-MM-DDTHH:MM" (no timezone/seconds).
-        return datetime.fromisoformat(raw_value)
+        parsed = datetime.fromisoformat(raw_value)
     except ValueError:
-        return None
+        return None, "A valid date and time is required."
+    if parsed.tzinfo is not None:
+        return None, (
+            "time_slot must be a local date and time without timezone "
+            "information (e.g. 2026-12-15T19:00)."
+        )
+    return parsed, None
 
 
 def business_hours_error(time_slot):
@@ -77,9 +92,9 @@ def create_reservation():
     if not email or not EMAIL_REGEX.match(email):
         errors["email"] = "A valid email address is required."
 
-    time_slot = parse_time_slot(time_slot_raw)
-    if not time_slot:
-        errors["time_slot"] = "A valid date and time is required."
+    time_slot, time_slot_error = parse_time_slot(time_slot_raw)
+    if time_slot_error:
+        errors["time_slot"] = time_slot_error
     elif time_slot < datetime.now() - timedelta(minutes=1):
         errors["time_slot"] = "Please choose a date and time in the future."
     else:
@@ -87,18 +102,28 @@ def create_reservation():
         if hours_error:
             errors["time_slot"] = hours_error
 
+    # Require a whole number of guests — do NOT silently truncate fractional
+    # values (e.g. 1.5 must be rejected, not quietly booked as 1).
     try:
-        guests = int(guests)
-        if guests < 1:
-            raise ValueError
-        if guests > MAX_PARTY_SIZE:
-            errors["guests"] = (
-                f"For parties over {MAX_PARTY_SIZE}, please call us directly "
-                "at (202) 555-4567."
-            )
+        guests_value = float(guests)
     except (TypeError, ValueError):
-        errors["guests"] = "Number of guests must be a positive integer."
+        errors["guests"] = "Number of guests must be a whole number."
         guests = None
+    else:
+        if not guests_value.is_integer():
+            errors["guests"] = "Number of guests must be a whole number (no fractions)."
+            guests = None
+        else:
+            guests = int(guests_value)
+            if guests < 1:
+                errors["guests"] = "At least 1 guest is required."
+                guests = None
+            elif guests > MAX_PARTY_SIZE:
+                errors["guests"] = (
+                    f"For parties over {MAX_PARTY_SIZE}, please call us directly "
+                    "at (202) 555-4567."
+                )
+                guests = None
 
     if errors:
         return jsonify({"error": "Invalid reservation request.", "fields": errors}), 400

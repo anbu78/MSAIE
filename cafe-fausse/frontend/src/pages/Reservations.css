@@ -11,16 +11,27 @@
   }
 }
 
+/* Grid/flex items default to a content-based min-width (min-width: auto),
+   which can be wider than the viewport and force horizontal overflow on
+   narrow phones — e.g. a datetime-local input's native calendar UI has an
+   intrinsic minimum width. Explicitly allowing these to shrink fixes the
+   320px viewport overflow (NFR-8). */
+.reservations-layout > * {
+  min-width: 0;
+}
+
 .reservation-form {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
+  min-width: 0;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.1rem;
+  min-width: 0;
 }
 
 @media (max-width: 480px) {
@@ -29,18 +40,21 @@
   }
 }
 
+.form-row > .form-field {
+  min-width: 0;
+}
+
 .form-field {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-}
-
-.form-field label {
-  font-weight: 600;
-  font-size: 0.9rem;
+  min-width: 0;
 }
 
 .form-field input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.65rem 0.8rem;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -84,4 +98,6 @@
 .reservations-info li {
   margin-bottom: 0.75rem;
   color: #5c5244;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }

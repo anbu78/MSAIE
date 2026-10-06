@@ -3,10 +3,19 @@
 This document describes the AI-assisted development tooling used to build the
 Café Fausse web application, per the assignment's submission requirements.
 
-## Tool Used
+## Tools Used
 
 **Cursor** (AI-based IDE with agentic coding capabilities) was used as the
-primary — and only — development tool for this project.
+primary development tool for this project — used for requirements ingestion,
+implementation, local verification, and iteration (see below).
+
+**Codex** was additionally used for an independent code review pass after
+the initial implementation was complete. Codex was given the running
+application (React, Flask, and PostgreSQL) plus the assignment brief and
+SRS, and asked to assess the project against the rubric's score-5 standard.
+It produced a written review identifying concrete, reproducible bugs and
+gaps rather than style opinions — see "Codex review and remediation" below
+for what it found and how each item was addressed.
 
 ## How It Was Used
 
@@ -44,6 +53,64 @@ primary — and only — development tool for this project.
    diagnosed the error from server logs/stack traces and corrected the
    configuration (switched Flask to port 5001, pinned the SQLAlchemy URI to
    the `postgresql+psycopg2://` dialect).
+
+## Codex review and remediation
+
+On October 6, 2026, the project (commit `d21ba75`) was independently
+reviewed using **Codex** against the assignment brief, the SRS, and the
+live running application. The review confirmed the core site, reservation
+flow, and newsletter integration all work, and flagged six concrete issues
+before a confident score-5 assessment could be made. Every finding below
+was reproduced locally and fixed in this codebase:
+
+1. **Missing behind-the-scenes gallery photography (FR-12).** The gallery
+   had interior, event, and dish images but no kitchen/behind-the-scenes
+   shot. *Fix:* added a new AI-generated kitchen/plating photo to
+   `frontend/src/data/gallery.js` with descriptive alt text, using the
+   existing lightbox behavior.
+2. **Fractional guest counts were silently truncated.** Submitting `1.5`
+   guests returned a success message for "1.5 guests" while the backend
+   silently stored `1`, creating a mismatch between the confirmation and the
+   database. *Fix:* both the React form (`Reservations.jsx`) and the Flask
+   route (`routes/reservations.py`) now explicitly reject non-integer guest
+   counts with a clear validation error instead of truncating, and the
+   success message is now built from the server's saved reservation record
+   rather than the raw client-side input.
+3. **Reservation page overflowed at a 320px viewport (NFR-8).** Native
+   `datetime-local` inputs have an intrinsic minimum width that can exceed a
+   narrow phone's viewport inside a flex/grid layout. *Fix:* added
+   `min-width: 0` to the relevant grid/flex containers and `width: 100%` to
+   form inputs in `Reservations.css`, plus `overflow-wrap`/`word-break` for
+   long unbroken text (e.g. the support email). Verified via a headless
+   browser at an exact 320px viewport that `document.documentElement
+   .scrollWidth` now equals `320` (previously larger).
+4. **Lightbox keyboard/focus behavior.** Arrow keys could open a closed
+   lightbox, and `Tab` while the lightbox was open could escape to
+   background gallery buttons instead of staying in the dialog. *Fix:*
+   rewrote `Lightbox.jsx` to (a) ignore navigation keys while closed, (b)
+   move focus into the dialog on open and trap `Tab`/`Shift+Tab` within its
+   buttons, (c) restore focus to the triggering thumbnail on close, and (d)
+   add an accessible `aria-label` naming the current image. Verified via
+   simulated keyboard events and real clicks in a headless browser.
+5. **A timezone-aware timestamp crashed the API with a 500.** The
+   reservation route compared a timezone-aware datetime to a naive
+   `datetime.now()`, which raises an uncaught `TypeError` in Python. A
+   standard browser form never sends this format, but a direct API call
+   could. *Fix:* `parse_time_slot()` now explicitly rejects timezone-aware
+   input with a clear `400` JSON validation error instead of crashing.
+6. **README listed an outdated Node.js prerequisite.** The README said
+   "Node.js 18+", but the installed Vite 8 / `@vitejs/plugin-react` 6
+   declare `engines.node` as `^20.19.0 || >=22.12.0`. *Fix:* updated both
+   mentions in `README.md` to the correct minimum versions.
+
+Items the review flagged as still requiring manual verification before
+submission (not code changes, and outside what an agent can confirm from a
+local checkout) include: testing in Firefox/Safari/Edge, confirming the
+SRS's page-load and form-processing time targets on an actual broadband
+connection (not just localhost), and the presentation/submission checklist
+(recording, live database verification, presenter ID/name, `quantic-grader`
+collaborator access, and — if applicable — the signed Group Project
+Agreement page).
 
 ## What Worked Well
 

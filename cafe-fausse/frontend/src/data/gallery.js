@@ -27,6 +27,12 @@ const gallery = [
     alt: 'Café Fausse dining room set for an elegant evening service',
     category: 'Interior',
   },
+  {
+    id: 5,
+    src: '/images/gallery-behind-the-scenes.jpg',
+    alt: 'Chef garnishing a plated dish in the Café Fausse kitchen during evening service',
+    category: 'Behind the Scenes',
+  },
 ];
 
 export const awards = [

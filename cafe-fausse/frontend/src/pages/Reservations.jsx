@@ -62,8 +62,14 @@ function validate(form) {
     if (hoursError) errors.timeSlot = hoursError;
   }
 
-  if (!form.guests || Number(form.guests) < 1) errors.guests = 'At least 1 guest is required.';
-  if (Number(form.guests) > MAX_PARTY_SIZE) {
+  const guestsNum = Number(form.guests);
+  if (!form.guests || Number.isNaN(guestsNum)) {
+    errors.guests = 'Number of guests is required.';
+  } else if (!Number.isInteger(guestsNum)) {
+    errors.guests = 'Number of guests must be a whole number (no fractions).';
+  } else if (guestsNum < 1) {
+    errors.guests = 'At least 1 guest is required.';
+  } else if (guestsNum > MAX_PARTY_SIZE) {
     errors.guests = `For parties over ${MAX_PARTY_SIZE}, please call us directly.`;
   }
   return errors;
@@ -104,10 +110,14 @@ function Reservations() {
         time_slot: form.timeSlot,
       });
 
+      // Build the confirmation from the server's saved reservation record
+      // (not the raw client-side form value), so the message always reflects
+      // exactly what was persisted to the database.
+      const saved = response.reservation;
       setStatus('success');
-      setConfirmedTable(response.table_number);
+      setConfirmedTable(saved.table_number);
       setResultMessage(
-        `You're booked! Table #${response.table_number} is reserved for ${form.guests} guest(s).`
+        `You're booked! Table #${saved.table_number} is reserved for ${saved.guests} guest(s).`
       );
       setForm(initialForm);
     } catch (err) {
@@ -187,8 +197,15 @@ function Reservations() {
                   type="number"
                   min="1"
                   max="20"
+                  step="1"
+                  inputMode="numeric"
                   value={form.guests}
                   onChange={handleChange}
+                  onKeyDown={(e) => {
+                    // Block decimal point / comma entry outright, since
+                    // fractional guest counts are never valid.
+                    if (e.key === '.' || e.key === ',') e.preventDefault();
+                  }}
                   required
                 />
                 {errors.guests && <p className="form-field__error">{errors.guests}</p>}
