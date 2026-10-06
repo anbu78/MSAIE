@@ -1,0 +1,63 @@
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.gallery-grid__item {
+  position: relative;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 10px;
+  background: none;
+  aspect-ratio: 4 / 3;
+}
+
+.gallery-grid__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gallery-grid__item:hover img {
+  transform: scale(1.06);
+}
+
+.gallery-grid__category {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0.6rem;
+  background: rgba(20, 15, 10, 0.65);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.gallery-page__subhead {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.award-card {
+  text-align: center;
+}
+
+.award-card h3 {
+  color: var(--color-primary);
+}
+
+.review-card {
+  font-style: italic;
+  font-size: 1.05rem;
+}
+
+.review-card footer {
+  margin-top: 0.75rem;
+  font-style: normal;
+  font-weight: 600;
+  color: #7a6a56;
+}

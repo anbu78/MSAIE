@@ -1,0 +1,51 @@
+.hero {
+  background-size: cover;
+  background-position: center;
+  color: #fff;
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+}
+
+.hero__content {
+  max-width: 720px;
+}
+
+.hero__eyebrow {
+  color: #f1c9a5;
+}
+
+.hero__title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  margin-bottom: 0.3em;
+}
+
+.hero__subtitle {
+  font-size: 1.2rem;
+  margin-bottom: 1.75rem;
+  color: #f3ece4;
+}
+
+.hero__actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.hero .btn--secondary {
+  border-color: #fff;
+  color: #fff;
+}
+
+.hero .btn--secondary:hover {
+  background: #fff;
+  color: var(--color-primary);
+}
+
+.info-card {
+  text-align: center;
+}
+
+.info-card h3 {
+  color: var(--color-primary);
+}
