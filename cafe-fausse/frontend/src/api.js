@@ -13,13 +13,15 @@ async function request(path, options = {}) {
   let data = null;
   try {
     data = await response.json();
-  } catch (err) {
+  } catch {
     // Non-JSON response body; leave data as null.
   }
 
   if (!response.ok) {
     const message = (data && data.error) || `Request failed with status ${response.status}`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.fields = data?.fields;
+    throw error;
   }
 
   return data;

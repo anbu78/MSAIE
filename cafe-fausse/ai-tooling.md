@@ -138,3 +138,13 @@ Agreement page).
   framework defaults.
 - The agent could not provision a shared/staging PostgreSQL instance; all
   verification was done against a local database created for this project.
+
+## Follow-up implementation with Codex
+
+Codex implemented the follow-up review fixes: strict JSON and field-type
+validation for reservations and newsletter signup, precise Node prerequisites,
+and a corrected team quick start. It also replaced the native combined
+date/time input with a date picker and quarter-hour time dropdown restricted
+to the restaurant's opening hours, with matching API validation. Regression
+checks cover malformed input, closing-time boundaries, 15-minute options,
+newsletter persistence, and reservation capacity.

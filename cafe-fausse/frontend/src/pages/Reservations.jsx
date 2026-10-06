@@ -1,65 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createReservation } from '../api';
+import { getReservationTimes, localDateToday } from '../data/reservationTimes';
 import './Reservations.css';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_PARTY_SIZE = 20;
 
-// Mirrors the backend's BUSINESS_HOURS (SRS FR-2): Monday–Saturday
-// 5:00 PM–11:00 PM, Sunday 5:00 PM–9:00 PM. Keyed by Date#getDay()
-// (Sunday=0 ... Saturday=6) as [openHour, closeHour] in 24-hour time.
-const BUSINESS_HOURS = {
-  0: [17, 21], // Sunday
-  1: [17, 23], // Monday
-  2: [17, 23], // Tuesday
-  3: [17, 23], // Wednesday
-  4: [17, 23], // Thursday
-  5: [17, 23], // Friday
-  6: [17, 23], // Saturday
-};
-
 const initialForm = {
-  name: '',
-  email: '',
-  phone: '',
-  guests: 2,
-  timeSlot: '',
+  name: '', email: '', phone: '', guests: 2, date: '', time: '',
 };
-
-function getMinDateTime() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
-}
-
-function businessHoursError(timeSlotValue) {
-  // `timeSlotValue` is "YYYY-MM-DDTHH:MM" from <input type="datetime-local">,
-  // parsed as local time so it matches BUSINESS_HOURS without timezone drift.
-  const date = new Date(timeSlotValue);
-  if (Number.isNaN(date.getTime())) return null;
-
-  const [openHour, closeHour] = BUSINESS_HOURS[date.getDay()];
-  const slotMinutes = date.getHours() * 60 + date.getMinutes();
-  if (slotMinutes < openHour * 60 || slotMinutes >= closeHour * 60) {
-    const dayName = date.toLocaleDateString(undefined, { weekday: 'long' });
-    const fmt = (h) => `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
-    return `We're closed at that time on ${dayName}. Open ${fmt(openHour)}–${fmt(closeHour)}.`;
-  }
-  return null;
-}
 
 function validate(form) {
   const errors = {};
   if (!form.name.trim()) errors.name = 'Name is required.';
   if (!EMAIL_REGEX.test(form.email.trim())) errors.email = 'Enter a valid email address.';
 
-  if (!form.timeSlot) {
-    errors.timeSlot = 'Select a date and time.';
-  } else if (new Date(form.timeSlot).getTime() < Date.now()) {
-    errors.timeSlot = 'Please choose a date and time in the future.';
-  } else {
-    const hoursError = businessHoursError(form.timeSlot);
-    if (hoursError) errors.timeSlot = hoursError;
+  if (!form.date) errors.date = 'Select a date.';
+  if (!form.time) {
+    errors.time = 'Select a time.';
+  } else if (!getReservationTimes(form.date).some((slot) => slot.value === form.time)) {
+    errors.time = 'Select an available quarter-hour time for this date.';
+  } else if (new Date(`${form.date}T${form.time}`).getTime() <= Date.now()) {
+    errors.time = 'Please choose a date and time in the future.';
   }
 
   const guestsNum = Number(form.guests);
@@ -80,11 +42,17 @@ function Reservations() {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [resultMessage, setResultMessage] = useState('');
-  const [confirmedTable, setConfirmedTable] = useState(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const timeOptions = getReservationTimes(form.date);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value, ...(name === 'date' ? { time: '' } : {}) }));
   };
 
   const handleSubmit = async (event) => {
@@ -99,7 +67,6 @@ function Reservations() {
 
     setStatus('submitting');
     setResultMessage('');
-    setConfirmedTable(null);
 
     try {
       const response = await createReservation({
@@ -107,7 +74,7 @@ function Reservations() {
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         guests: Number(form.guests),
-        time_slot: form.timeSlot,
+        time_slot: `${form.date}T${form.time}`,
       });
 
       // Build the confirmation from the server's saved reservation record
@@ -115,13 +82,16 @@ function Reservations() {
       // exactly what was persisted to the database.
       const saved = response.reservation;
       setStatus('success');
-      setConfirmedTable(saved.table_number);
       setResultMessage(
         `You're booked! Table #${saved.table_number} is reserved for ${saved.guests} guest(s).`
       );
       setForm(initialForm);
     } catch (err) {
       setStatus('error');
+      if (err.fields) {
+        const { time_slot, ...fields } = err.fields;
+        setErrors({ ...fields, ...(time_slot ? { time: time_slot } : {}) });
+      }
       setResultMessage(
         err.message || 'That time slot is fully booked. Please choose another time.'
       );
@@ -172,23 +142,36 @@ function Reservations() {
 
             <div className="form-row">
               <div className="form-field">
-                <label htmlFor="timeSlot">Date &amp; Time *</label>
+                <label htmlFor="date">Date *</label>
                 <input
-                  id="timeSlot"
-                  name="timeSlot"
-                  type="datetime-local"
-                  min={getMinDateTime()}
-                  step="1800"
-                  value={form.timeSlot}
-                  onChange={handleChange}
-                  required
+                  id="date" name="date" type="date" min={localDateToday(currentTime)}
+                  value={form.date} onChange={handleChange} required
+                  aria-invalid={Boolean(errors.date)} aria-describedby={errors.date ? 'date-error' : undefined}
                 />
-                <p className="form-field__hint">
-                  Open Mon–Sat 5:00 PM–11:00 PM, Sun 5:00 PM–9:00 PM.
-                </p>
-                {errors.timeSlot && <p className="form-field__error">{errors.timeSlot}</p>}
+                {errors.date && <p id="date-error" className="form-field__error">{errors.date}</p>}
               </div>
-
+              <div className="form-field">
+                <label htmlFor="time">Time *</label>
+                <select
+                  id="time" name="time" value={form.time} onChange={handleChange}
+                  required disabled={!form.date} aria-invalid={Boolean(errors.time)}
+                  aria-describedby={errors.time ? 'time-hint time-error' : 'time-hint'}
+                >
+                  <option value="">{form.date ? 'Select a time' : 'Select a date first'}</option>
+                  {timeOptions.map((slot) => (
+                    <option key={slot.value} value={slot.value}
+                      disabled={new Date(`${form.date}T${slot.value}`).getTime() <= currentTime}>
+                      {slot.label}
+                    </option>
+                  ))}
+                </select>
+                <p id="time-hint" className="form-field__hint">
+                  Every 15 minutes. Mon–Sat 5–11 PM; Sun 5–9 PM.
+                </p>
+                {errors.time && <p id="time-error" className="form-field__error">{errors.time}</p>}
+              </div>
+            </div>
+            <div className="form-row">
               <div className="form-field">
                 <label htmlFor="guests">Number of Guests *</label>
                 <input

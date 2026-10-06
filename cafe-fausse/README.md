@@ -5,11 +5,11 @@ restaurant: a React (JSX) front-end, a Flask REST API back-end, and a
 PostgreSQL database for reservations and newsletter signups. Built to meet
 the project's Software Requirements Specification (SRS).
 
-**Team:** You, Balaji, Anbu
+**Team:** Kavitha, Balaji, Anbu
 
 ## Team Quick Start
 
-You'll need: **Node.js 20.19+ or 22.12+** (run `node -v` to check; required
+You'll need: **Node.js 20.x >=20.19.0 or >=22.12.0** (run `node -v` to check; required
 by Vite 8 / `@vitejs/plugin-react` 6), **Python 3.10+**, and **PostgreSQL**
 installed locally.
 
@@ -32,7 +32,7 @@ python seed.py                  # creates the customers/reservations tables
 python app.py                   # runs on http://localhost:5001
 
 # 4. Frontend setup (React + Vite) — in a second terminal
-cd frontend
+cd /path/to/MSAIE/cafe-fausse/frontend  # use your clone location
 npm install
 npm run dev                     # runs on http://localhost:5173
 ```
@@ -107,7 +107,7 @@ cafe-fausse/
 
 ## Prerequisites
 
-- Node.js **20.19+ or 22.12+** (required by Vite 8 / `@vitejs/plugin-react` 6 — check with `node -v`) and npm
+- Node.js **20.x >=20.19.0 or >=22.12.0** (required by Vite 8 / `@vitejs/plugin-react` 6 — check with `node -v`) and npm
 - Python 3.10+
 - PostgreSQL running locally (or accessible via a connection string)
 
@@ -187,6 +187,8 @@ on a different origin.
   hours (Mon–Sat 5–11 PM, Sun 5–9 PM), or includes timezone information
   (send a plain local timestamp, e.g. `2026-11-01T19:00`, with no `Z` or
   `+00:00` suffix).
+- `400` also rejects non-object JSON, invalid field types or oversized text,
+  and times outside quarter-hour boundaries (`:00`, `:15`, `:30`, `:45`).
 - `409` if all 30 tables are booked for that exact time slot.
 
 ### `POST /api/newsletter`
@@ -240,3 +242,18 @@ against a local PostgreSQL database, including:
 
 See `ai-tooling.md` for details on how AI tooling was used to build and
 verify this project.
+
+## Reservation times and regression checks
+
+Choose a date, then a time from the quarter-hour dropdown (`:00`, `:15`,
+`:30`, `:45`). Monday–Saturday offer 5:00 PM through 10:45 PM; Sunday
+offers 5:00 PM through 8:45 PM. Closing times (11:00 PM and 9:00 PM)
+are excluded. Changing the date clears the selected time. Past times on
+today's date are disabled, and the API independently validates opening
+hours and quarter-hour boundaries.
+
+Run `npm test` in `frontend/` for the time-option tests. With backend
+dependencies installed, run `python -m unittest discover -s tests -v`
+in `backend/` for form validation, opening-hours boundaries, database
+persistence, and 30-table capacity checks. These regression tests use an
+isolated in-memory SQLite database; local integration checks use PostgreSQL.

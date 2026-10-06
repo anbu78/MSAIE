@@ -51,7 +51,8 @@
   min-width: 0;
 }
 
-.form-field input {
+.form-field input,
+.form-field select {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -59,6 +60,12 @@
   border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 1rem;
+  font-family: inherit;
+}
+
+.form-field label {
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .form-field__error {

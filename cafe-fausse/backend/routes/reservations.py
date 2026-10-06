@@ -41,7 +41,7 @@ def parse_time_slot(raw_value):
     restaurant timezone, so we reject timezone-aware input explicitly with a
     clear validation message instead (FR-7, NFR-6).
     """
-    if not raw_value:
+    if not isinstance(raw_value, str) or not raw_value:
         return None, "A valid date and time is required."
     try:
         parsed = datetime.fromisoformat(raw_value)
@@ -52,6 +52,8 @@ def parse_time_slot(raw_value):
             "time_slot must be a local date and time without timezone "
             "information (e.g. 2026-12-15T19:00)."
         )
+    if parsed.minute % 15 or parsed.second or parsed.microsecond:
+        return None, "Choose a time on the quarter hour (:00, :15, :30, or :45)."
     return parsed, None
 
 
@@ -78,7 +80,20 @@ def create_reservation():
     the reservation. Returns 201 + table number on success, or 409 with an
     error message if the time slot is fully booked.
     """
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "Request body must be a JSON object."}), 400
+
+    # Validate types before string operations and lengths before database writes.
+    field_errors = {}
+    for field, limit in (("name", 120), ("email", 255), ("phone", 30)):
+        value = payload.get(field)
+        if value is not None and not isinstance(value, str):
+            field_errors[field] = f"{field.capitalize()} must be text."
+        elif isinstance(value, str) and len(value.strip()) > limit:
+            field_errors[field] = f"{field.capitalize()} must be {limit} characters or fewer."
+    if field_errors:
+        return jsonify({"error": "Invalid reservation request.", "fields": field_errors}), 400
 
     name = (payload.get("name") or "").strip()
     email = (payload.get("email") or "").strip().lower()
@@ -105,8 +120,10 @@ def create_reservation():
     # Require a whole number of guests — do NOT silently truncate fractional
     # values (e.g. 1.5 must be rejected, not quietly booked as 1).
     try:
+        if isinstance(guests, bool):
+            raise ValueError
         guests_value = float(guests)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         errors["guests"] = "Number of guests must be a whole number."
         guests = None
     else:
