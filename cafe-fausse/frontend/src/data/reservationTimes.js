@@ -1,4 +1,9 @@
-// Restaurant local times; closing time is exclusive.
+// Generate quarter-hour reservation choices using the same opening hours as
+// the backend's BUSINESS_HOURS (SRS FR-2): Mon–Sat 5–11 PM, Sun 5–9 PM.
+// Date#getDay() returns 0 for Sunday, so only Sunday uses the earlier closing time.
+// Closing time is exclusive: the last choices are 10:45 PM and 8:45 PM respectively.
+// This replaces the former BUSINESS_HOURS map in Reservations.jsx; the backend
+// still independently validates opening hours and quarter-hour boundaries.
 export function getReservationTimes(dateValue) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return [];
   const date = new Date(`${dateValue}T12:00:00`);
