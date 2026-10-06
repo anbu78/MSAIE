@@ -12,7 +12,7 @@ reservations_bp = Blueprint("reservations", __name__)
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
-MAX_PARTY_SIZE = 20
+MAX_PARTY_SIZE = 6
 
 # Business hours per SRS FR-2: Monday–Saturday 5:00 PM–11:00 PM,
 # Sunday 5:00 PM–9:00 PM. Keyed by Python's weekday() (Monday=0 ... Sunday=6)
@@ -137,8 +137,8 @@ def create_reservation():
                 guests = None
             elif guests > MAX_PARTY_SIZE:
                 errors["guests"] = (
-                    f"For parties over {MAX_PARTY_SIZE}, please call us directly "
-                    "at (202) 555-4567."
+                    f"Each reservation allows up to {MAX_PARTY_SIZE} guests. "
+                    "Submit another reservation for an additional table."
                 )
                 guests = None
 

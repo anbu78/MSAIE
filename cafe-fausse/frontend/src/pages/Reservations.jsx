@@ -4,7 +4,7 @@ import { getReservationTimes, localDateToday } from '../data/reservationTimes';
 import './Reservations.css';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_PARTY_SIZE = 20;
+const MAX_PARTY_SIZE = 6;
 
 const initialForm = {
   name: '', email: '', phone: '', guests: 2, date: '', time: '',
@@ -32,7 +32,7 @@ function validate(form) {
   } else if (guestsNum < 1) {
     errors.guests = 'At least 1 guest is required.';
   } else if (guestsNum > MAX_PARTY_SIZE) {
-    errors.guests = `For parties over ${MAX_PARTY_SIZE}, please call us directly.`;
+    errors.guests = `Each reservation allows up to ${MAX_PARTY_SIZE} guests. Submit another reservation for an additional table.`;
   }
   return errors;
 }
@@ -174,24 +174,23 @@ function Reservations() {
             <div className="form-row">
               <div className="form-field">
                 <label htmlFor="guests">Number of Guests *</label>
-                <input
+                <select
                   id="guests"
                   name="guests"
-                  type="number"
-                  min="1"
-                  max="20"
-                  step="1"
-                  inputMode="numeric"
                   value={form.guests}
                   onChange={handleChange}
-                  onKeyDown={(e) => {
-                    // Block decimal point / comma entry outright, since
-                    // fractional guest counts are never valid.
-                    if (e.key === '.' || e.key === ',') e.preventDefault();
-                  }}
+                  aria-describedby={errors.guests ? 'guests-hint guests-error' : 'guests-hint'}
+                  aria-invalid={Boolean(errors.guests)}
                   required
-                />
-                {errors.guests && <p className="form-field__error">{errors.guests}</p>}
+                >
+                  {Array.from({ length: MAX_PARTY_SIZE }, (_, index) => index + 1).map((count) => (
+                    <option key={count} value={count}>{count}</option>
+                  ))}
+                </select>
+                <p id="guests-hint" className="form-field__hint">
+                  Up to 6 guests per table. Submit another reservation for each additional table.
+                </p>
+                {errors.guests && <p id="guests-error" className="form-field__error">{errors.guests}</p>}
               </div>
             </div>
 
@@ -213,7 +212,7 @@ function Reservations() {
             <h3>Good to Know</h3>
             <ul>
               <li>We hold 30 tables per seating; availability is checked in real time.</li>
-              <li>Parties of more than 20 should call us directly at (202) 555-4567.</li>
+              <li>Each reservation books one table for 1–6 guests. Additional tables require separate reservations and are subject to availability.</li>
               <li>Please arrive within 15 minutes of your reserved time.</li>
               <li>Need to cancel or modify? Call us or email reservations@cafefausse.com.</li>
             </ul>

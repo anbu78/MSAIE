@@ -183,7 +183,7 @@ on a different origin.
 
 - `201` on success, with the assigned `table_number`.
 - `400` if required fields are missing/invalid, `guests` is not a whole
-  number between 1 and 20, `time_slot` is in the past, outside business
+  number between 1 and 6, `time_slot` is in the past, outside business
   hours (Mon–Sat 5–11 PM, Sun 5–9 PM), or includes timezone information
   (send a plain local timestamp, e.g. `2026-11-01T19:00`, with no `Z` or
   `+00:00` suffix).
@@ -217,10 +217,16 @@ Simple liveness check, returns `{"status": "ok"}`.
   validated both client-side (for instant feedback) and server-side (as the
   authoritative check) against Café Fausse's posted hours — Monday–Saturday
   5:00 PM–11:00 PM, Sunday 5:00 PM–9:00 PM (FR-2) — and reject past-dated
-  requests and parties over 20 guests. This keeps the reservation system's
+  requests and parties over 6 guests per reservation. This keeps the reservation system's
   behavior consistent with what the Home page and footer actually advertise,
   and prevents a client that bypasses the front-end form from booking
   invalid slots directly against the API.
+- **Guest capacity (project design choice)**: The guest dropdown offers 1–6
+  guests per reservation, with the same limit enforced by the API. The SRS
+  does not specify seats per table. Larger groups can submit multiple
+  reservations for the same time (for example, 20 guests as 6 + 6 + 6 + 2).
+  Each reservation assigns one available table independently; adjacent
+  tables are not guaranteed.
 - **Newsletter + reservations share one `Customers` table**, matching the
   SRS schema (FR-17): a customer created via a reservation can later be
   flagged for the newsletter (or vice versa) without duplicate rows, keyed

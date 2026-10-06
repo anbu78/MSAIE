@@ -66,9 +66,28 @@ class FormTests(unittest.TestCase):
                 self.assertEqual(self.post(**{field: 'x' * (limit + 1)}).status_code, 400)
 
     def test_invalid_guest_counts(self):
-        for guests in (True, False, 1.5, '1.5', 0, -1, 21, [], {}, None, 'NaN', 'Infinity'):
+        for guests in (True, False, 1.5, '1.5', 0, -1, 7, 19, 20, 21, [], {}, None, 'NaN', 'Infinity'):
             with self.subTest(guests=guests):
                 self.assertEqual(self.post(guests=guests).status_code, 400)
+
+    def test_allowed_guest_counts(self):
+        for guests in range(1, 7):
+            with self.subTest(guests=guests):
+                response = self.post(guests=guests)
+                self.assertEqual(response.status_code, 201)
+                self.assertEqual(response.json['reservation']['guests'], guests)
+
+    def test_customer_can_book_additional_tables_for_same_time(self):
+        tables = set()
+        for guests in (6, 6, 6, 2):
+            response = self.post(guests=guests)
+            self.assertEqual(response.status_code, 201)
+            tables.add(response.json['table_number'])
+        self.assertEqual(len(tables), 4)
+        self.assertEqual(Customer.query.count(), 1)
+        reservations = Reservation.query.all()
+        self.assertEqual(len(reservations), 4)
+        self.assertEqual(sum(row.guests for row in reservations), 20)
 
     def test_every_quarter_hour_within_weekday_and_sunday_hours(self):
         for date, closing in ((self.monday, 23), (self.sunday, 21)):

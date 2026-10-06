@@ -148,3 +148,8 @@ date/time input with a date picker and quarter-hour time dropdown restricted
 to the restaurant's opening hours, with matching API validation. Regression
 checks cover malformed input, closing-time boundaries, 15-minute options,
 newsletter persistence, and reservation capacity.
+
+Codex also implemented the requested 1–6 guest dropdown and matching API
+limit, with guidance to submit separate reservations for additional tables.
+Regression checks cover every allowed guest count and repeated bookings
+by one customer for a 20-person group across four distinct tables.
