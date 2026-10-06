@@ -5,56 +5,6 @@ restaurant: a React (JSX) front-end, a Flask REST API back-end, and a
 PostgreSQL database for reservations and newsletter signups. Built to meet
 the project's Software Requirements Specification (SRS).
 
-**Team:** You, Balaji, Anbu
-
-## Team Quick Start
-
-You'll need: **Node.js 18+**, **Python 3.10+**, and **PostgreSQL** installed
-locally.
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/userkavitha/MSAIE.git
-cd MSAIE/cafe-fausse
-
-# 2. Create the local database
-psql postgres -c "CREATE ROLE cafe_fausse WITH LOGIN PASSWORD 'cafe_fausse';"
-psql postgres -c "CREATE DATABASE cafe_fausse OWNER cafe_fausse;"
-
-# 3. Backend setup (Flask + PostgreSQL) — in one terminal
-cd backend
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env            # edit DATABASE_URL if your local setup differs
-python seed.py                  # creates the customers/reservations tables
-python app.py                   # runs on http://localhost:5001
-
-# 4. Frontend setup (React + Vite) — in a second terminal
-cd frontend
-npm install
-npm run dev                     # runs on http://localhost:5173
-```
-
-Then open **http://localhost:5173** in your browser. The front-end
-automatically proxies API calls to the Flask server during development.
-
-> **Note:** the Flask app runs on port `5001` instead of the default `5000`
-> because macOS's AirPlay Receiver commonly occupies port `5000`.
-
-Other useful files in this folder:
-- [`ai-tooling.md`](./ai-tooling.md) — summary of AI tooling used to build this project
-- [`staging.md`](./staging.md) — deployment/staging notes
-- [`PRESENTATION_SCRIPT.md`](./PRESENTATION_SCRIPT.md) — demo presentation script for the group recording
-
-### Working as a team
-
-- Pull before you start working: `git pull`
-- Create a branch per change: `git checkout -b your-name/short-description`
-- Open a PR into `main` rather than pushing directly, so the other two can review
-- Don't commit your local `.env` file (it's git-ignored) — each teammate should
-  copy `backend/.env.example` to `backend/.env` locally
-
 ## Features
 
 - **Home** — restaurant name, address/phone/hours, and navigation (FR-1–FR-4)
@@ -181,7 +131,9 @@ on a different origin.
 ```
 
 - `201` on success, with the assigned `table_number`.
-- `400` if required fields are missing/invalid.
+- `400` if required fields are missing/invalid, the time slot is in the
+  past, the time slot falls outside business hours (Mon–Sat 5–11 PM, Sun
+  5–9 PM), or the party size exceeds 20 guests.
 - `409` if all 30 tables are booked for that exact time slot.
 
 ### `POST /api/newsletter`
@@ -206,6 +158,14 @@ Simple liveness check, returns `{"status": "ok"}`.
   (`random.choice`). A unique database constraint on `(time_slot,
   table_number)` provides a second line of defense against double-booking
   under concurrent requests (NFR-5).
+- **Business-hours and party-size enforcement**: Reservation requests are
+  validated both client-side (for instant feedback) and server-side (as the
+  authoritative check) against Café Fausse's posted hours — Monday–Saturday
+  5:00 PM–11:00 PM, Sunday 5:00 PM–9:00 PM (FR-2) — and reject past-dated
+  requests and parties over 20 guests. This keeps the reservation system's
+  behavior consistent with what the Home page and footer actually advertise,
+  and prevents a client that bypasses the front-end form from booking
+  invalid slots directly against the API.
 - **Newsletter + reservations share one `Customers` table**, matching the
   SRS schema (FR-17): a customer created via a reservation can later be
   flagged for the newsletter (or vice versa) without duplicate rows, keyed

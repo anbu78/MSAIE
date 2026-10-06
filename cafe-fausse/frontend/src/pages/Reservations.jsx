@@ -3,6 +3,20 @@ import { createReservation } from '../api';
 import './Reservations.css';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_PARTY_SIZE = 20;
+
+// Mirrors the backend's BUSINESS_HOURS (SRS FR-2): Monday–Saturday
+// 5:00 PM–11:00 PM, Sunday 5:00 PM–9:00 PM. Keyed by Date#getDay()
+// (Sunday=0 ... Saturday=6) as [openHour, closeHour] in 24-hour time.
+const BUSINESS_HOURS = {
+  0: [17, 21], // Sunday
+  1: [17, 23], // Monday
+  2: [17, 23], // Tuesday
+  3: [17, 23], // Wednesday
+  4: [17, 23], // Thursday
+  5: [17, 23], // Friday
+  6: [17, 23], // Saturday
+};
 
 const initialForm = {
   name: '',
@@ -18,13 +32,40 @@ function getMinDateTime() {
   return now.toISOString().slice(0, 16);
 }
 
+function businessHoursError(timeSlotValue) {
+  // `timeSlotValue` is "YYYY-MM-DDTHH:MM" from <input type="datetime-local">,
+  // parsed as local time so it matches BUSINESS_HOURS without timezone drift.
+  const date = new Date(timeSlotValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const [openHour, closeHour] = BUSINESS_HOURS[date.getDay()];
+  const slotMinutes = date.getHours() * 60 + date.getMinutes();
+  if (slotMinutes < openHour * 60 || slotMinutes >= closeHour * 60) {
+    const dayName = date.toLocaleDateString(undefined, { weekday: 'long' });
+    const fmt = (h) => `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`;
+    return `We're closed at that time on ${dayName}. Open ${fmt(openHour)}–${fmt(closeHour)}.`;
+  }
+  return null;
+}
+
 function validate(form) {
   const errors = {};
   if (!form.name.trim()) errors.name = 'Name is required.';
   if (!EMAIL_REGEX.test(form.email.trim())) errors.email = 'Enter a valid email address.';
-  if (!form.timeSlot) errors.timeSlot = 'Select a date and time.';
+
+  if (!form.timeSlot) {
+    errors.timeSlot = 'Select a date and time.';
+  } else if (new Date(form.timeSlot).getTime() < Date.now()) {
+    errors.timeSlot = 'Please choose a date and time in the future.';
+  } else {
+    const hoursError = businessHoursError(form.timeSlot);
+    if (hoursError) errors.timeSlot = hoursError;
+  }
+
   if (!form.guests || Number(form.guests) < 1) errors.guests = 'At least 1 guest is required.';
-  if (Number(form.guests) > 20) errors.guests = 'For parties over 20, please call us directly.';
+  if (Number(form.guests) > MAX_PARTY_SIZE) {
+    errors.guests = `For parties over ${MAX_PARTY_SIZE}, please call us directly.`;
+  }
   return errors;
 }
 
@@ -127,10 +168,14 @@ function Reservations() {
                   name="timeSlot"
                   type="datetime-local"
                   min={getMinDateTime()}
+                  step="1800"
                   value={form.timeSlot}
                   onChange={handleChange}
                   required
                 />
+                <p className="form-field__hint">
+                  Open Mon–Sat 5:00 PM–11:00 PM, Sun 5:00 PM–9:00 PM.
+                </p>
                 {errors.timeSlot && <p className="form-field__error">{errors.timeSlot}</p>}
               </div>
 

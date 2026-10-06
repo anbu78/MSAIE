@@ -1,6 +1,6 @@
 import random
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, jsonify, request
 from sqlalchemy.exc import IntegrityError
@@ -12,6 +12,22 @@ reservations_bp = Blueprint("reservations", __name__)
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
+MAX_PARTY_SIZE = 20
+
+# Business hours per SRS FR-2: Monday–Saturday 5:00 PM–11:00 PM,
+# Sunday 5:00 PM–9:00 PM. Keyed by Python's weekday() (Monday=0 ... Sunday=6)
+# as (open_hour, close_hour) in 24-hour time. The closing hour is exclusive —
+# it's the last moment the kitchen is open, not a bookable reservation time.
+BUSINESS_HOURS = {
+    0: (17, 23),  # Monday
+    1: (17, 23),  # Tuesday
+    2: (17, 23),  # Wednesday
+    3: (17, 23),  # Thursday
+    4: (17, 23),  # Friday
+    5: (17, 23),  # Saturday
+    6: (17, 21),  # Sunday
+}
+
 
 def parse_time_slot(raw_value):
     """Parse an ISO-ish datetime string (e.g. from <input type=datetime-local>)."""
@@ -22,6 +38,22 @@ def parse_time_slot(raw_value):
         return datetime.fromisoformat(raw_value)
     except ValueError:
         return None
+
+
+def business_hours_error(time_slot):
+    """Returns an error message if time_slot falls outside Café Fausse's
+    posted hours (SRS FR-2), or None if it's valid. Enforced server-side so
+    the rule holds even if a client bypasses the front-end form."""
+    open_hour, close_hour = BUSINESS_HOURS[time_slot.weekday()]
+    slot_minutes = time_slot.hour * 60 + time_slot.minute
+    if not (open_hour * 60 <= slot_minutes < close_hour * 60):
+        day_name = time_slot.strftime("%A")
+        return (
+            f"Café Fausse is closed at that time on {day_name}. "
+            f"We're open {open_hour % 12 or 12}:00 {'AM' if open_hour < 12 else 'PM'}"
+            f"–{close_hour % 12 or 12}:00 {'AM' if close_hour < 12 else 'PM'}."
+        )
+    return None
 
 
 @reservations_bp.route("/api/reservations", methods=["POST"])
@@ -48,11 +80,22 @@ def create_reservation():
     time_slot = parse_time_slot(time_slot_raw)
     if not time_slot:
         errors["time_slot"] = "A valid date and time is required."
+    elif time_slot < datetime.now() - timedelta(minutes=1):
+        errors["time_slot"] = "Please choose a date and time in the future."
+    else:
+        hours_error = business_hours_error(time_slot)
+        if hours_error:
+            errors["time_slot"] = hours_error
 
     try:
         guests = int(guests)
         if guests < 1:
             raise ValueError
+        if guests > MAX_PARTY_SIZE:
+            errors["guests"] = (
+                f"For parties over {MAX_PARTY_SIZE}, please call us directly "
+                "at (202) 555-4567."
+            )
     except (TypeError, ValueError):
         errors["guests"] = "Number of guests must be a positive integer."
         guests = None
