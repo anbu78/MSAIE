@@ -1,5 +1,5 @@
 # Café Fausse — Demo Presentation Script
-### Presenters: You, Balaji, Anbu | Target length: ~8–9 minutes
+### Presenters: Kavitha, Balaji, Anbu | Target length: ~8–9 minutes
 
 This script is written to satisfy the assignment's presentation requirements:
 - All three of you must be on camera for the whole recording, and **everyone must speak at least once**.
@@ -23,13 +23,13 @@ Before recording, have ready:
 
 **[All three on camera together. Each person holds up their ID clearly, then states their name.]**
 
-**You:** "Hi, I'm [Your Name]." *(hold ID to camera for a couple seconds)*
+**Kavitha:** "Hi, I'm Kavitha." *(hold ID to camera for a couple seconds)*
 
 **Balaji:** "Hi, I'm Balaji." *(hold ID to camera)*
 
 **Anbu:** "Hi, I'm Anbu." *(hold ID to camera)*
 
-**You:** "Today we're presenting our project for the Web Application and Interface Design course: a full-stack website for Café Fausse, a fine-dining restaurant. We'll walk through the site, show the reservation and newsletter systems working end-to-end, and show the effect on our backend database directly. Let's get started."
+**Kavitha:** "Today we're presenting our project for the Web Application and Interface Design course: a full-stack website for Café Fausse, a fine-dining restaurant. We'll walk through the site, show the reservation and newsletter systems working end-to-end, and show the effect on our backend database directly. Let's get started."
 
 **[Switch to screen share now.]**
 
@@ -37,7 +37,7 @@ Before recording, have ready:
 
 ## 0:45–1:30 — Project & Tech Stack Overview
 
-**You:** "Café Fausse needed a new website that could show off their menu, their story, and their gallery — and solve a real operational problem: the owner was fielding too many phone calls for table reservations. So we built a complete reservation system behind the site."
+**Kavitha:** "Café Fausse needed a new website that could show off their menu, their story, and their gallery — and solve a real operational problem: the owner was fielding too many phone calls for table reservations. So we built a complete reservation system behind the site."
 
 "On the tech side, we followed the SRS requirements exactly: a React front-end built with JSX, using Vite as our build tool and React Router for navigation; a Flask REST API on the back-end; and a PostgreSQL database with two tables — Customers and Reservations — exactly as specified. Styling is done with CSS Grid and Flexbox for full responsiveness."
 
@@ -47,7 +47,7 @@ Before recording, have ready:
 
 **[Navigate live through the site as you narrate.]**
 
-**You:** "Let's start on the Home page." *(click Home / show hero section)* "It has the restaurant name front and center, the address, phone number, and hours, and navigation links to every other page — that covers our Home page requirements."
+**Kavitha:** "Let's start on the Home page." *(click Home / show hero section)* "It has the restaurant name front and center, the address, phone number, and hours, and navigation links to every other page — that covers our Home page requirements."
 
 *(click Menu)* "Here's the Menu page, segmented into Starters, Main Courses, Desserts, and Beverages, each with a description and price, pulled directly from the SRS."
 
@@ -97,9 +97,9 @@ SELECT reservation_id, customer_id, time_slot, table_number, guests FROM reserva
 
 ## 7:30–8:30 — Implementation Decisions
 
-**You:** "A few implementation decisions worth calling out. We used Vite instead of Create React App for a faster, simpler React + JSX setup with no extra configuration needed."
+**Kavitha:** "A few implementation decisions worth calling out. We used Vite instead of Create React App for a faster, simpler React + JSX setup with no extra configuration needed."
 
-**You:** "On styling, the SRS asked us to use either Flexbox or Grid — we actually used both, deliberately, for different jobs. We use CSS Grid for the page-level, multi-column content: the menu categories, the gallery photo grid, the About Us founder cards, and the two-column layout on the Reservations page. Then we use Flexbox for one-dimensional component alignment — the navbar, the newsletter and reservation form rows, the lightbox centering, and the overall sticky footer layout. So it's Grid for two-dimensional layout, Flexbox for one-dimensional alignment — the standard, intentional way to combine the two, not an inconsistency."
+**Kavitha:** "On styling, the SRS asked us to use either Flexbox or Grid — we actually used both, deliberately, for different jobs. We use CSS Grid for the page-level, multi-column content: the menu categories, the gallery photo grid, the About Us founder cards, and the two-column layout on the Reservations page. Then we use Flexbox for one-dimensional component alignment — the navbar, the newsletter and reservation form rows, the lightbox centering, and the overall sticky footer layout. So it's Grid for two-dimensional layout, Flexbox for one-dimensional alignment — the standard, intentional way to combine the two, not an inconsistency."
 
 **Balaji:** "On the backend, we structured the Flask app with an application factory and blueprints, so the reservations and newsletter logic are in separate, independently testable modules. We used Flask-SQLAlchemy so our database models map directly onto the Customers and Reservations tables from the SRS."
 
@@ -109,7 +109,7 @@ SELECT reservation_id, customer_id, time_slot, table_number, guests FROM reserva
 
 ## 8:30–9:00 — Closing
 
-**You:** "That covers all five pages, the newsletter signup, the full reservation flow including the fully-booked edge case, and the database effects behind both features."
+**Kavitha:** "That covers all five pages, the newsletter signup, the full reservation flow including the fully-booked edge case, and the database effects behind both features."
 
 **Balaji:** "Thanks for watching!"
 
@@ -149,12 +149,12 @@ Run this right before you hit record so your database queries during the demo on
 | Segment | Speaker(s) | Approx. time |
 |---|---|---|
 | Intro + ID | All three | 0:45 |
-| Overview | You | 0:45 |
-| Site tour | You, Balaji | 1:30 |
+| Overview | Kavitha | 0:45 |
+| Site tour | Kavitha, Balaji | 1:30 |
 | Newsletter demo | Balaji | 1:00 |
 | Reservation demo | Anbu | 2:30 |
 | Database verification | Anbu | 1:00 |
-| Implementation decisions | You, Balaji, Anbu | 1:00 |
+| Implementation decisions | Kavitha, Balaji, Anbu | 1:00 |
 | Closing | All three | 0:30 |
 | **Total** | | **~9:00** |
 
